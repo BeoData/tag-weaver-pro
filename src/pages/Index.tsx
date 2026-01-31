@@ -43,10 +43,42 @@ const Index = () => {
     }
   };
 
-  const handleDownloadAll = () => {
-    // In a real implementation, this would use browser-id3-writer
-    // to write metadata and create downloadable MP3 files
-    alert('Download functionality requires server-side processing or Web Audio API implementation');
+  const handleDownloadAll = async () => {
+    const doneFiles = files.filter(f => f.status === 'done' || f.status === 'ready');
+
+    if (doneFiles.length === 0) {
+      alert('No files ready for download');
+      return;
+    }
+
+    // Dynamic import to avoid SSR issues if any, though not strictly needed for client-side only app
+    const { writeTags } = await import('@/lib/tag-writer');
+
+    for (const mp3File of doneFiles) {
+      try {
+        const taggedBlob = await writeTags(
+          mp3File.file,
+          mp3File.metadata,
+          mp3File.coverArt
+        );
+
+        // Create download link
+        const url = URL.createObjectURL(taggedBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = mp3File.name; // Uses original name, maybe we want to rename?
+        document.body.appendChild(link);
+        link.click();
+
+        // Cleanup
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+      } catch (error) {
+        console.error(`Failed to download ${mp3File.name}:`, error);
+        alert(`Failed to prepare ${mp3File.name} for download.`);
+      }
+    }
   };
 
   return (
@@ -67,7 +99,7 @@ const Index = () => {
               </p>
             </div>
             <FileDropZone onFilesSelected={addFiles} />
-            
+
             <div className="mt-12 grid grid-cols-3 gap-6 text-center">
               <div className="p-4">
                 <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-3">
@@ -102,8 +134,8 @@ const Index = () => {
           <div className="grid grid-cols-12 gap-6">
             {/* Left Sidebar - File List */}
             <div className="col-span-3 space-y-4">
-              <FileDropZone 
-                onFilesSelected={addFiles} 
+              <FileDropZone
+                onFilesSelected={addFiles}
                 disabled={isAnyAnalyzing || isProcessing}
               />
               <FileList
@@ -112,7 +144,7 @@ const Index = () => {
                 onSelectFile={setSelectedFileId}
                 onRemoveFile={removeFile}
               />
-              
+
               <div className="flex flex-col gap-2">
                 <Button
                   onClick={handleProcess}
@@ -122,7 +154,7 @@ const Index = () => {
                   <Play className="w-4 h-4 mr-2" />
                   Process {readyCount} File{readyCount !== 1 ? 's' : ''}
                 </Button>
-                
+
                 {doneCount > 0 && (
                   <Button
                     variant="outline"
