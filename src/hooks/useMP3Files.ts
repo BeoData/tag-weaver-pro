@@ -32,15 +32,25 @@ export function useMP3Files() {
       setSelectedFileId(mp3Files[0].id);
     }
 
+
+    console.log(`[Upload] Starting batch of ${mp3Files.length} files at ${performance.now().toFixed(2)}ms`);
+
     // Process each file
-    for (const mp3File of mp3Files) {
-      await processFile(mp3File);
-    }
+    // OPTIMIZATION: Run in parallel instead of sequential
+    // for (const mp3File of mp3Files) {
+    //   await processFile(mp3File);
+    // }
+    await Promise.all(mp3Files.map(processFile));
+
+    console.log(`[Upload] Batch finished at ${performance.now().toFixed(2)}ms`);
   }, [selectedFileId]);
 
   const processFile = async (mp3File: MP3File) => {
+    const fileStart = performance.now();
+    console.log(`[File ${mp3File.name}] Processing started at ${fileStart.toFixed(2)}ms`);
+
     const updateFile = (updates: Partial<MP3File>) => {
-      setFiles(prev => prev.map(f => 
+      setFiles(prev => prev.map(f =>
         f.id === mp3File.id ? { ...f, ...updates } : f
       ));
     };
@@ -49,7 +59,10 @@ export function useMP3Files() {
       updateFile({ status: 'analyzing', progress: 10 });
 
       // Parse existing metadata
+      const parseStart = performance.now();
       const { metadata: parsedMetadata, removedFrames } = await parseMP3Metadata(mp3File.file);
+      console.log(`[File ${mp3File.name}] Metadata parsed in ${(performance.now() - parseStart).toFixed(2)}ms`);
+
       updateFile({ progress: 30 });
 
       // Analyze audio for BPM and Key
@@ -60,13 +73,26 @@ export function useMP3Files() {
       let keyDetected = false;
 
       try {
-        const analysis = await analyzeAudioFile(mp3File.file);
-        
+        const analyzeStart = performance.now();
+        console.log(`[File ${mp3File.name}] Starting full audio analysis...`);
+
+        const analysis = await analyzeAudioFile(mp3File.file, (progress) => {
+          // Map 0-100 analysis progress to 30-70 overall file progress
+          const overallProgress = 30 + (progress * 0.4);
+          // Only update state occasionally to avoid react render thrashing if needed, 
+          // but for now logging is enough verification
+          if (progress % 10 === 0 || progress === 100) {
+            console.log(`[File ${mp3File.name}] Analysis progress: ${Math.round(progress)}%`);
+          }
+        });
+
+        console.log(`[File ${mp3File.name}] Audio analysis finished in ${(performance.now() - analyzeStart).toFixed(2)}ms`);
+
         if (!bpm && analysis.bpm) {
           bpm = String(analysis.bpm);
           bpmDetected = true;
         }
-        
+
         if (!key && analysis.key) {
           key = analysis.key;
           camelotKey = analysis.camelot;
@@ -77,6 +103,7 @@ export function useMP3Files() {
       }
 
       updateFile({ progress: 70 });
+
 
       // Clean AI metadata
       const { cleaned: cleanedMetadata, removedFrames: aiRemovedFrames } = cleanAIMetadata({
@@ -124,6 +151,8 @@ export function useMP3Files() {
         description: `Failed to process ${mp3File.name}`,
         variant: 'destructive',
       });
+    } finally {
+      console.log(`[File ${mp3File.name}] Total processing time: ${(performance.now() - fileStart).toFixed(2)}ms`);
     }
   };
 
