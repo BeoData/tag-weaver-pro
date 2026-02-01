@@ -3,6 +3,8 @@ import { FileAudio, CheckCircle, Loader2, AlertCircle, Trash2 } from 'lucide-rea
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { useAuth } from '@/contexts/AuthContext';
+import { Badge } from '@/components/ui/badge';
 
 interface FileListProps {
   files: MP3File[];
@@ -12,16 +14,22 @@ interface FileListProps {
 }
 
 export function FileList({ files, selectedFileId, onSelectFile, onRemoveFile }: FileListProps) {
+  const { user, getTierLimits } = useAuth();
+  const limits = getTierLimits();
+
   if (files.length === 0) return null;
 
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden">
-      <div className="px-4 py-3 border-b border-border bg-muted/30">
+      <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center justify-between">
         <h3 className="font-medium text-sm text-foreground">
-          Files ({files.length})
+          Files ({files.length}{limits.maxFiles !== Infinity ? `/${limits.maxFiles}` : ''})
         </h3>
+        <Badge variant={user?.tier || 'free'} className="text-[10px] h-4">
+          {user?.tier.toUpperCase() || 'FREE'}
+        </Badge>
       </div>
-      
+
       <div className="divide-y divide-border max-h-[400px] overflow-y-auto">
         {files.map((file) => (
           <div
@@ -35,7 +43,7 @@ export function FileList({ files, selectedFileId, onSelectFile, onRemoveFile }: 
             onClick={() => onSelectFile(file.id)}
           >
             <StatusIcon status={file.status} />
-            
+
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground truncate">
                 {file.name}
@@ -55,12 +63,12 @@ export function FileList({ files, selectedFileId, onSelectFile, onRemoveFile }: 
                   </>
                 )}
               </div>
-              
+
               {(file.status === 'analyzing' || file.status === 'processing') && (
                 <Progress value={file.progress} className="mt-2 h-1" />
               )}
             </div>
-            
+
             <Button
               variant="ghost"
               size="icon"
