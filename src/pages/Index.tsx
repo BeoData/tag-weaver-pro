@@ -5,6 +5,7 @@ import { FileList } from '@/components/FileList';
 import { MetadataEditor } from '@/components/MetadataEditor';
 import { CoverArtUpload } from '@/components/CoverArtUpload';
 import { ProcessingReportView } from '@/components/ProcessingReport';
+import { WaveformVisualizer } from '@/components/WaveformVisualizer';
 import { Button } from '@/components/ui/button';
 import { Play, Download, FileAudio, Sparkles } from 'lucide-react';
 import { useState } from 'react';
@@ -201,6 +202,27 @@ const Index = () => {
                         </div>
                       )}
                     </div>
+
+                    {(selectedFile.waveform || selectedFile.status === 'analyzing' || selectedFile.status === 'processing') && (
+                      <div className="mt-4 pt-4 border-t border-border">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-xs font-medium text-muted-foreground">WAVEFORM ANALYSIS</p>
+                          {(selectedFile.status === 'analyzing' || selectedFile.status === 'processing') && (
+                            <span className="text-xs text-primary animate-pulse">
+                              {selectedFile.status === 'analyzing' ? `Generating... ${Math.round(selectedFile.progress)}%` : 'Deep Scan & Clean...'}
+                            </span>
+                          )}
+                        </div>
+                        <WaveformVisualizer
+                          peaks={selectedFile.waveform || []}
+                          height={64}
+                          isLoading={selectedFile.status === 'analyzing' || selectedFile.status === 'processing'}
+                          progress={selectedFile.progress}
+                          showScanner={selectedFile.status === 'processing'}
+                          className="opacity-90"
+                        />
+                      </div>
+                    )}
                   </div>
 
                   <MetadataEditor

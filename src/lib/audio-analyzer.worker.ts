@@ -17,7 +17,10 @@ self.onmessage = (e) => {
         self.postMessage({ type: 'progress', value: 50, stage: 'Key Detection' });
         const { key, camelot } = detectKey(channelData, sampleRate);
 
-        self.postMessage({ type: 'result', bpm, key, camelot });
+        self.postMessage({ type: 'progress', value: 80, stage: 'Waveform Generation' });
+        const peaks = calculatePeaks(channelData, 2000); // 2000 points for visualization
+
+        self.postMessage({ type: 'result', bpm, key, camelot, peaks });
     } catch (error) {
         self.postMessage({ error: String(error) });
     }
@@ -110,6 +113,24 @@ function getThreshold(data: Float32Array): number {
     const sorted = new Float32Array(data);
     sorted.sort();
     return sorted[Math.floor(sorted.length * 0.85)];
+}
+
+function calculatePeaks(channelData: Float32Array, length: number): number[] {
+    const blockSize = Math.floor(channelData.length / length);
+    const peaks: number[] = new Array(length).fill(0);
+
+    for (let i = 0; i < length; i++) {
+        const start = i * blockSize;
+        let max = 0;
+        for (let j = 0; j < blockSize; j++) {
+            if (start + j < channelData.length) {
+                const sample = Math.abs(channelData[start + j]);
+                if (sample > max) max = sample;
+            }
+        }
+        peaks[i] = max;
+    }
+    return peaks;
 }
 
 // --- Key Detection Logic ---

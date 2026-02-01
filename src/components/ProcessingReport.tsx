@@ -2,7 +2,13 @@ import { ProcessingReport } from '@/types/mp3';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Download, FileText, AlertTriangle, CheckCircle } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Download, FileText, AlertTriangle, CheckCircle, FileSpreadsheet, FileType } from 'lucide-react';
 
 interface ProcessingReportViewProps {
   report: ProcessingReport;
@@ -10,7 +16,53 @@ interface ProcessingReportViewProps {
 }
 
 export function ProcessingReportView({ report, onDownload }: ProcessingReportViewProps) {
-  const exportReport = () => {
+
+  const exportCSV = () => {
+    // CSV Header
+    const rows = [['File', 'Field', 'Old Value', 'New Value', 'Category']];
+
+    // Metadata Changes
+    for (const change of report.changes) {
+      rows.push([
+        report.fileName,
+        change.field,
+        change.oldValue || '',
+        change.newValue || '',
+        'Metadata Change'
+      ]);
+    }
+
+    // Removed Frames
+    for (const frame of report.removedFrames) {
+      rows.push([
+        report.fileName,
+        frame.id,
+        frame.value || '',
+        '(Removed)',
+        `AI/Software Removal: ${frame.name}`
+      ]);
+    }
+
+    // Escape CSV fields
+    const csvContent = rows.map(e => e.map(item => {
+      const stringItem = String(item);
+      // If contains comma, quote, or newline, wrap in quotes and escape quotes
+      if (/[",\n]/.test(stringItem)) {
+        return `"${stringItem.replace(/"/g, '""')}"`;
+      }
+      return stringItem;
+    }).join(",")).join("\n");
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `report_${report.fileName.replace('.mp3', '')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportTXT = () => {
     const lines: string[] = [
       '='.repeat(60),
       'MP3 METADATA PROCESSING REPORT',
@@ -62,10 +114,25 @@ export function ProcessingReportView({ report, onDownload }: ProcessingReportVie
           <FileText className="w-4 h-4 text-primary" />
           <h3 className="font-medium text-sm text-foreground">Processing Report</h3>
         </div>
-        <Button variant="outline" size="sm" onClick={exportReport}>
-          <Download className="w-4 h-4 mr-2" />
-          Export
-        </Button>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <Download className="w-4 h-4 mr-2" />
+              Export
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={exportCSV}>
+              <FileSpreadsheet className="w-4 h-4 mr-2" />
+              <span>Export as CSV</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={exportTXT}>
+              <FileType className="w-4 h-4 mr-2" />
+              <span>Export as TXT</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="p-4 space-y-6">
@@ -75,7 +142,7 @@ export function ProcessingReportView({ report, onDownload }: ProcessingReportVie
             <CheckCircle className="w-4 h-4 text-success" />
             <h4 className="text-sm font-medium">Metadata Changes ({report.changes.length})</h4>
           </div>
-          
+
           {report.changes.length > 0 ? (
             <div className="rounded-lg border border-border overflow-hidden">
               <Table>
@@ -113,7 +180,7 @@ export function ProcessingReportView({ report, onDownload }: ProcessingReportVie
               <AlertTriangle className="w-4 h-4 text-warning" />
               <h4 className="text-sm font-medium">Removed AI/Software Frames ({report.removedFrames.length})</h4>
             </div>
-            
+
             <div className="space-y-2">
               {report.removedFrames.map((frame, index) => (
                 <div
