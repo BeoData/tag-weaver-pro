@@ -150,7 +150,7 @@ Opens the production build at `http://localhost:4173`
 Create `.env.production`:
 
 ```env
-VITE_SUPABASE_URL=https://zzwrhfnzcetzfbczxcqd.supabase.co
+VITE_SUPABASE_URL=https://zzouyfttszzvbzvgstzg.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key-here
 ```
 
@@ -221,5 +221,5 @@ vercel
 ## Support
 
 For issues or questions:
-- Check Supabase logs: https://supabase.com/dashboard/project/zzwrhfnzcetzfbczxcqd/logs
+- Check Supabase logs: https://supabase.com/dashboard/project/zzouyfttszzvbzvgstzgg/logs
 - Review build logs in your deployment platform
