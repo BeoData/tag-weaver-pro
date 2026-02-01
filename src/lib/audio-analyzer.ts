@@ -12,7 +12,9 @@ export async function analyzeAudioFile(
   waveform: number[];
 }> {
   return new Promise((resolve, reject) => {
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    // @ts-expect-error - handle webkit prefix for older browsers
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    const audioContext = new AudioContextClass();
     const reader = new FileReader();
 
     reader.onload = async (e) => {
