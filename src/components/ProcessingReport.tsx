@@ -8,14 +8,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Download, FileText, AlertTriangle, CheckCircle, FileSpreadsheet, FileType } from 'lucide-react';
+import { Download, FileText, AlertTriangle, CheckCircle, FileSpreadsheet, FileType, Lock } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ProcessingReportViewProps {
   report: ProcessingReport;
   onDownload?: () => void;
+  onUpgradeClick?: () => void;
 }
 
-export function ProcessingReportView({ report, onDownload }: ProcessingReportViewProps) {
+export function ProcessingReportView({ report, onDownload, onUpgradeClick }: ProcessingReportViewProps) {
+  const { getTierLimits } = useAuth();
+  const tierLimits = getTierLimits();
 
   const exportCSV = () => {
     // CSV Header
@@ -115,24 +119,35 @@ export function ProcessingReportView({ report, onDownload }: ProcessingReportVie
           <h3 className="font-medium text-sm text-foreground">Processing Report</h3>
         </div>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Download className="w-4 h-4 mr-2" />
-              Export
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={exportCSV}>
-              <FileSpreadsheet className="w-4 h-4 mr-2" />
-              <span>Export as CSV</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={exportTXT}>
-              <FileType className="w-4 h-4 mr-2" />
-              <span>Export as TXT</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {tierLimits.canExportReports ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Download className="w-4 h-4 mr-2" />
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={exportCSV}>
+                <FileSpreadsheet className="w-4 h-4 mr-2" />
+                <span>Export as CSV</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportTXT}>
+                <FileType className="w-4 h-4 mr-2" />
+                <span>Export as TXT</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onUpgradeClick}
+          >
+            <Lock className="w-4 h-4 mr-2" />
+            Export (Upgrade)
+          </Button>
+        )}
       </div>
 
       <div className="p-4 space-y-6">

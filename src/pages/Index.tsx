@@ -7,11 +7,20 @@ import { CoverArtUpload } from '@/components/CoverArtUpload';
 import { ProcessingReportView } from '@/components/ProcessingReport';
 import { WaveformVisualizer } from '@/components/WaveformVisualizer';
 import { Button } from '@/components/ui/button';
-import { Play, Download, FileAudio, Sparkles } from 'lucide-react';
+import { Play, Download, FileAudio, Sparkles, Lock } from 'lucide-react';
 import { useState } from 'react';
 import { ProcessingReport } from '@/types/mp3';
+import { useAuth } from '@/contexts/AuthContext';
+import { LoginModal } from '@/components/auth/LoginModal';
+import { PricingModal } from '@/components/auth/PricingModal';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
+import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
+  const { user, getTierLimits } = useAuth();
+  const { toast } = useToast();
+  const tierLimits = getTierLimits();
+
   const {
     files,
     selectedFile,
@@ -27,10 +36,25 @@ const Index = () => {
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentReport, setCurrentReport] = useState<ProcessingReport | null>(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showPricingModal, setShowPricingModal] = useState(false);
 
   const readyCount = files.filter(f => f.status === 'ready').length;
   const doneCount = files.filter(f => f.status === 'done').length;
   const isAnyAnalyzing = files.some(f => f.status === 'analyzing');
+
+  const handleAddFiles = (newFiles: File[]) => {
+    if (files.length + newFiles.length > tierLimits.maxFiles) {
+      toast({
+        title: 'Upload limit reached',
+        description: `${user?.tier === 'free' ? 'Free' : 'Basic'} tier is limited to ${tierLimits.maxFiles} file${tierLimits.maxFiles > 1 ? 's' : ''}. Upgrade for more.`,
+        variant: 'destructive',
+      });
+      setShowPricingModal(true);
+      return;
+    }
+    addFiles(newFiles);
+  };
 
   const handleProcess = async () => {
     setIsProcessing(true);
@@ -88,6 +112,8 @@ const Index = () => {
         filesCount={files.length}
         readyCount={readyCount}
         doneCount={doneCount}
+        onLoginClick={() => setShowLoginModal(true)}
+        onPricingClick={() => setShowPricingModal(true)}
       />
 
       <main className="container mx-auto px-4 py-8">
@@ -99,7 +125,7 @@ const Index = () => {
                 Drag and drop MP3 files to automatically analyze BPM, Key, and clean AI metadata
               </p>
             </div>
-            <FileDropZone onFilesSelected={addFiles} />
+            <FileDropZone onFilesSelected={handleAddFiles} />
 
             <div className="mt-12 grid grid-cols-3 gap-6 text-center">
               <div className="p-4">
@@ -136,7 +162,7 @@ const Index = () => {
             {/* Left Sidebar - File List */}
             <div className="col-span-3 space-y-4">
               <FileDropZone
-                onFilesSelected={addFiles}
+                onFilesSelected={handleAddFiles}
                 disabled={isAnyAnalyzing || isProcessing}
               />
               <FileList
@@ -151,19 +177,37 @@ const Index = () => {
                   onClick={handleProcess}
                   disabled={readyCount === 0 || isProcessing}
                   className="w-full"
+                  size="lg"
                 >
-                  <Play className="w-4 h-4 mr-2" />
-                  Process {readyCount} File{readyCount !== 1 ? 's' : ''}
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  {isProcessing
+                    ? 'Processing...'
+                    : tierLimits.canBulkProcess
+                      ? `Process All (${readyCount})`
+                      : `Process (${readyCount})`
+                  }
                 </Button>
 
-                {doneCount > 0 && (
+                {tierLimits.canDownloadFiles ? (
                   <Button
-                    variant="outline"
                     onClick={handleDownloadAll}
+                    disabled={doneCount === 0}
+                    variant="outline"
                     className="w-full"
+                    size="lg"
                   >
                     <Download className="w-4 h-4 mr-2" />
-                    Download All
+                    Download All ({doneCount})
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => setShowPricingModal(true)}
+                    variant="outline"
+                    className="w-full"
+                    size="lg"
+                  >
+                    <Lock className="w-4 h-4 mr-2" />
+                    Download (Upgrade)
                   </Button>
                 )}
               </div>
@@ -250,7 +294,10 @@ const Index = () => {
               )}
 
               {currentReport && (
-                <ProcessingReportView report={currentReport} />
+                <ProcessingReportView
+                  report={currentReport}
+                  onUpgradeClick={() => setShowPricingModal(true)}
+                />
               )}
 
               {selectedFile?.removedFrames && selectedFile.removedFrames.length > 0 && !currentReport && (
@@ -268,6 +315,9 @@ const Index = () => {
           </div>
         )}
       </main>
+
+      <LoginModal open={showLoginModal} onOpenChange={setShowLoginModal} />
+      <PricingModal open={showPricingModal} onOpenChange={setShowPricingModal} />
     </div>
   );
 };
