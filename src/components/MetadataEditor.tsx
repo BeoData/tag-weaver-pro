@@ -22,17 +22,17 @@ export function MetadataEditor({ metadata, onChange, disabled }: MetadataEditorP
     <div className="bg-card rounded-xl border border-border overflow-hidden">
       <Tabs defaultValue="basic" className="w-full">
         <div className="px-4 py-3 border-b border-border bg-muted/30">
-          <TabsList className="grid w-full grid-cols-3 bg-muted">
-            <TabsTrigger value="basic" className="gap-2">
-              <Music2 className="w-4 h-4" />
+          <TabsList className="grid w-full grid-cols-3 bg-muted h-10 sm:h-11">
+            <TabsTrigger value="basic" className="gap-1.5 sm:gap-2 text-[11px] sm:text-sm">
+              <Music2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               Basic
             </TabsTrigger>
-            <TabsTrigger value="advanced" className="gap-2">
-              <Disc className="w-4 h-4" />
+            <TabsTrigger value="advanced" className="gap-1.5 sm:gap-2 text-[11px] sm:text-sm">
+              <Disc className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               Advanced
             </TabsTrigger>
-            <TabsTrigger value="extra" className="gap-2">
-              <Info className="w-4 h-4" />
+            <TabsTrigger value="extra" className="gap-1.5 sm:gap-2 text-[11px] sm:text-sm">
+              <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               Extra
             </TabsTrigger>
           </TabsList>
@@ -40,7 +40,7 @@ export function MetadataEditor({ metadata, onChange, disabled }: MetadataEditorP
 
         <div className="p-4">
           <TabsContent value="basic" className="mt-0 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="col-span-2">
                 <Label htmlFor="title">Title</Label>
                 <Input
@@ -51,7 +51,7 @@ export function MetadataEditor({ metadata, onChange, disabled }: MetadataEditorP
                   className="mt-1.5"
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="artist">Artist</Label>
                 <Input
@@ -62,7 +62,7 @@ export function MetadataEditor({ metadata, onChange, disabled }: MetadataEditorP
                   className="mt-1.5"
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="albumArtist">Album Artist</Label>
                 <Input
@@ -73,7 +73,7 @@ export function MetadataEditor({ metadata, onChange, disabled }: MetadataEditorP
                   className="mt-1.5"
                 />
               </div>
-              
+
               <div className="col-span-2">
                 <Label htmlFor="album">Album</Label>
                 <Input
@@ -84,7 +84,7 @@ export function MetadataEditor({ metadata, onChange, disabled }: MetadataEditorP
                   className="mt-1.5"
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="genre">Genre</Label>
                 <Select
@@ -104,7 +104,7 @@ export function MetadataEditor({ metadata, onChange, disabled }: MetadataEditorP
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div>
                 <Label htmlFor="year">Year</Label>
                 <Input
@@ -118,7 +118,7 @@ export function MetadataEditor({ metadata, onChange, disabled }: MetadataEditorP
                   className="mt-1.5"
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="trackNumber">Track #</Label>
                 <Input
@@ -130,7 +130,7 @@ export function MetadataEditor({ metadata, onChange, disabled }: MetadataEditorP
                   className="mt-1.5"
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="discNumber">Disc #</Label>
                 <Input
@@ -146,7 +146,7 @@ export function MetadataEditor({ metadata, onChange, disabled }: MetadataEditorP
           </TabsContent>
 
           <TabsContent value="advanced" className="mt-0 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <div className="flex items-center gap-2">
                   <Label htmlFor="bpm">BPM</Label>
@@ -168,7 +168,7 @@ export function MetadataEditor({ metadata, onChange, disabled }: MetadataEditorP
                   className="mt-1.5"
                 />
               </div>
-              
+
               <div>
                 <div className="flex items-center gap-2">
                   <Label htmlFor="camelotKey">Key (Camelot)</Label>
@@ -200,7 +200,7 @@ export function MetadataEditor({ metadata, onChange, disabled }: MetadataEditorP
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div>
                 <Label htmlFor="composer">Composer</Label>
                 <Input
@@ -211,7 +211,7 @@ export function MetadataEditor({ metadata, onChange, disabled }: MetadataEditorP
                   className="mt-1.5"
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="producer">Producer</Label>
                 <Input
@@ -222,7 +222,7 @@ export function MetadataEditor({ metadata, onChange, disabled }: MetadataEditorP
                   className="mt-1.5"
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="publisher">Publisher / Label</Label>
                 <Input
@@ -233,7 +233,7 @@ export function MetadataEditor({ metadata, onChange, disabled }: MetadataEditorP
                   className="mt-1.5"
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="copyright">Copyright</Label>
                 <Input
@@ -244,7 +244,7 @@ export function MetadataEditor({ metadata, onChange, disabled }: MetadataEditorP
                   className="mt-1.5"
                 />
               </div>
-              
+
               <div className="col-span-2">
                 <Label htmlFor="isrc">ISRC</Label>
                 <Input
@@ -260,7 +260,7 @@ export function MetadataEditor({ metadata, onChange, disabled }: MetadataEditorP
           </TabsContent>
 
           <TabsContent value="extra" className="mt-0 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="language">Language</Label>
                 <Select
@@ -280,7 +280,7 @@ export function MetadataEditor({ metadata, onChange, disabled }: MetadataEditorP
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div>
                 <Label htmlFor="mood">Mood</Label>
                 <Select
@@ -300,7 +300,7 @@ export function MetadataEditor({ metadata, onChange, disabled }: MetadataEditorP
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="col-span-2">
                 <Label htmlFor="comment">Comment</Label>
                 <Textarea
@@ -312,7 +312,7 @@ export function MetadataEditor({ metadata, onChange, disabled }: MetadataEditorP
                   className="mt-1.5 min-h-[80px]"
                 />
               </div>
-              
+
               <div className="col-span-2">
                 <Label htmlFor="lyrics">Lyrics</Label>
                 <Textarea

@@ -159,7 +159,7 @@ export function ProcessingReportView({ report, onDownload, onUpgradeClick }: Pro
           </div>
 
           {report.changes.length > 0 ? (
-            <div className="rounded-lg border border-border overflow-hidden">
+            <div className="rounded-lg border border-border overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
