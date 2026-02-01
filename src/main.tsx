@@ -2,7 +2,11 @@ import { createRoot } from "react-dom/client";
 import { Buffer } from 'buffer';
 
 // Polyfill Buffer for music-metadata-browser
-// @ts-ignore
+declare global {
+    interface Window {
+        Buffer: typeof Buffer;
+    }
+}
 window.Buffer = Buffer;
 
 // Force enable Context Menu and F12 (DevTools)

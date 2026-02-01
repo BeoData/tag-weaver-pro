@@ -3,6 +3,7 @@ import { MP3File, MP3Metadata, CoverArt, DEFAULT_METADATA, ProcessingReport } fr
 import { parseMP3Metadata } from '@/lib/metadata-parser';
 import { analyzeAudioFile, cleanAIMetadata } from '@/lib/audio-analyzer';
 import { useToast } from '@/hooks/use-toast';
+import { generateUUID } from '@/lib/utils';
 
 export function useMP3Files() {
   const [files, setFiles] = useState<MP3File[]>([]);
@@ -12,40 +13,7 @@ export function useMP3Files() {
 
   const selectedFile = files.find(f => f.id === selectedFileId);
 
-  const addFiles = useCallback(async (newFiles: File[]) => {
-    const mp3Files: MP3File[] = newFiles.map(file => ({
-      id: crypto.randomUUID(),
-      file,
-      name: file.name,
-      size: file.size,
-      status: 'pending',
-      progress: 0,
-      metadata: { ...DEFAULT_METADATA },
-      originalMetadata: { ...DEFAULT_METADATA },
-      removedFrames: [],
-    }));
-
-    setFiles(prev => [...prev, ...mp3Files]);
-
-    // Always select the first of the newly added files
-    if (mp3Files.length > 0) {
-      setSelectedFileId(mp3Files[0].id);
-    }
-
-
-    console.log(`[Upload] Starting batch of ${mp3Files.length} files at ${performance.now().toFixed(2)}ms`);
-
-    // Process each file
-    // OPTIMIZATION: Run in parallel instead of sequential
-    // for (const mp3File of mp3Files) {
-    //   await processFile(mp3File);
-    // }
-    await Promise.all(mp3Files.map(processFile));
-
-    console.log(`[Upload] Batch finished at ${performance.now().toFixed(2)}ms`);
-  }, [selectedFileId]);
-
-  const processFile = async (mp3File: MP3File) => {
+  const processFile = useCallback(async (mp3File: MP3File) => {
     const fileStart = performance.now();
     console.log(`[File ${mp3File.name}] Processing started at ${fileStart.toFixed(2)}ms`);
 
@@ -58,14 +26,14 @@ export function useMP3Files() {
     try {
       updateFile({ status: 'analyzing', progress: 10 });
 
-      // Parse existing metadata
+      // Parse metadata
       const parseStart = performance.now();
-      const { metadata: parsedMetadata, removedFrames } = await parseMP3Metadata(mp3File.file);
+      const { metadata: parsedMetadata, removedFrames: initialRemovedFrames } = await parseMP3Metadata(mp3File.file);
       console.log(`[File ${mp3File.name}] Metadata parsed in ${(performance.now() - parseStart).toFixed(2)}ms`);
 
       updateFile({ progress: 30 });
 
-      // Analyze audio for BPM and Key
+      // Audio analysis and AI cleanup
       let bpm = parsedMetadata.bpm;
       let key = parsedMetadata.key;
       let camelotKey = parsedMetadata.camelotKey;
@@ -100,7 +68,7 @@ export function useMP3Files() {
         console.warn('Audio analysis failed:', error);
       }
 
-      // Clean AI metadata
+      // Cleanup AI traces
       const { cleaned: cleanedAIMetadata, removedFrames: aiRemovedFrames } = cleanAIMetadata({
         ...parsedMetadata,
         bpm,
@@ -110,15 +78,16 @@ export function useMP3Files() {
         keyDetected,
       });
 
-      const allRemovedFrames = [...removedFrames, ...aiRemovedFrames];
+      const allRemovedFrames = [...initialRemovedFrames, ...aiRemovedFrames];
 
       const finalMetadata: MP3Metadata = {
         ...cleanedAIMetadata,
-        // Apply defaults where empty
-        artist: cleanedAIMetadata.artist || DEFAULT_METADATA.artist,
-        albumArtist: cleanedAIMetadata.albumArtist || DEFAULT_METADATA.albumArtist,
-        publisher: cleanedAIMetadata.publisher || DEFAULT_METADATA.publisher,
-        copyright: cleanedAIMetadata.copyright || DEFAULT_METADATA.copyright,
+        title: cleanedAIMetadata.title || mp3File.name.replace('.mp3', ''),
+        bpm: bpmDetected ? bpm : (cleanedAIMetadata.bpm || DEFAULT_METADATA.bpm),
+        key: keyDetected ? key : (cleanedAIMetadata.key || DEFAULT_METADATA.key),
+        camelotKey: keyDetected ? camelotKey : (cleanedAIMetadata.camelotKey || DEFAULT_METADATA.camelotKey),
+        bpmDetected,
+        keyDetected,
       };
 
       updateFile({
@@ -150,7 +119,40 @@ export function useMP3Files() {
     } finally {
       console.log(`[File ${mp3File.name}] Total processing time: ${(performance.now() - fileStart).toFixed(2)}ms`);
     }
-  };
+  }, [toast]);
+
+  const addFiles = useCallback(async (newFiles: File[]) => {
+    const mp3Files: MP3File[] = newFiles.map(file => ({
+      id: generateUUID(),
+      file,
+      name: file.name,
+      size: file.size,
+      status: 'pending',
+      progress: 0,
+      metadata: { ...DEFAULT_METADATA },
+      originalMetadata: { ...DEFAULT_METADATA },
+      removedFrames: [],
+    }));
+
+    setFiles(prev => [...prev, ...mp3Files]);
+
+    // Always select the first of the newly added files
+    if (mp3Files.length > 0) {
+      setSelectedFileId(mp3Files[0].id);
+    }
+
+
+    console.log(`[Upload] Starting batch of ${mp3Files.length} files at ${performance.now().toFixed(2)}ms`);
+
+    // Process each file
+    // OPTIMIZATION: Run in parallel instead of sequential
+    // for (const mp3File of mp3Files) {
+    //   await processFile(mp3File);
+    // }
+    await Promise.all(mp3Files.map(processFile));
+
+    console.log(`[Upload] Batch finished at ${performance.now().toFixed(2)}ms`);
+  }, [processFile]);
 
   const removeFile = useCallback((id: string) => {
     setFiles(prev => prev.filter(f => f.id !== id));
