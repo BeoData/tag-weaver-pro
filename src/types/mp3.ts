@@ -9,6 +9,7 @@ export interface MP3File {
   originalMetadata: MP3Metadata;
   removedFrames: RemovedFrame[];
   coverArt?: CoverArt;
+  waveform?: number[];
   error?: string;
 }
 
@@ -154,7 +155,7 @@ export const AI_FRAME_PATTERNS = [
 ];
 
 export const LANGUAGES = [
-  'English', 'Serbian', 'Spanish', 'French', 'German', 
+  'English', 'Serbian', 'Spanish', 'French', 'German',
   'Italian', 'Portuguese', 'Russian', 'Japanese', 'Korean',
   'Chinese', 'Arabic', 'Hindi', 'Dutch', 'Polish',
   'Swedish', 'Norwegian', 'Danish', 'Finnish', 'Greek',

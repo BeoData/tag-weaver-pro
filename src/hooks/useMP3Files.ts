@@ -27,8 +27,8 @@ export function useMP3Files() {
 
     setFiles(prev => [...prev, ...mp3Files]);
 
-    // Select first file if none selected
-    if (!selectedFileId && mp3Files.length > 0) {
+    // Always select the first of the newly added files
+    if (mp3Files.length > 0) {
       setSelectedFileId(mp3Files[0].id);
     }
 
@@ -71,42 +71,37 @@ export function useMP3Files() {
       let camelotKey = parsedMetadata.camelotKey;
       let bpmDetected = false;
       let keyDetected = false;
+      let waveform: number[] | undefined = undefined;
 
       try {
         const analyzeStart = performance.now();
         console.log(`[File ${mp3File.name}] Starting full audio analysis...`);
 
-        const analysis = await analyzeAudioFile(mp3File.file, (progress) => {
-          // Map 0-100 analysis progress to 30-70 overall file progress
-          const overallProgress = 30 + (progress * 0.4);
-          // Only update state occasionally to avoid react render thrashing if needed, 
-          // but for now logging is enough verification
-          if (progress % 10 === 0 || progress === 100) {
-            console.log(`[File ${mp3File.name}] Analysis progress: ${Math.round(progress)}%`);
-          }
+        const analysis = await analyzeAudioFile(mp3File.file, (overallProgress) => {
+          updateFile({ progress: overallProgress });
         });
 
         console.log(`[File ${mp3File.name}] Audio analysis finished in ${(performance.now() - analyzeStart).toFixed(2)}ms`);
 
-        if (!bpm && analysis.bpm) {
-          bpm = String(analysis.bpm);
+        if (analysis.bpm) {
+          bpm = analysis.bpm.toString();
           bpmDetected = true;
         }
 
-        if (!key && analysis.key) {
+        // Only override if detected
+        if (analysis.key) {
           key = analysis.key;
           camelotKey = analysis.camelot;
           keyDetected = true;
         }
+        waveform = analysis.waveform;
+
       } catch (error) {
         console.warn('Audio analysis failed:', error);
       }
 
-      updateFile({ progress: 70 });
-
-
       // Clean AI metadata
-      const { cleaned: cleanedMetadata, removedFrames: aiRemovedFrames } = cleanAIMetadata({
+      const { cleaned: cleanedAIMetadata, removedFrames: aiRemovedFrames } = cleanAIMetadata({
         ...parsedMetadata,
         bpm,
         key,
@@ -118,12 +113,12 @@ export function useMP3Files() {
       const allRemovedFrames = [...removedFrames, ...aiRemovedFrames];
 
       const finalMetadata: MP3Metadata = {
-        ...cleanedMetadata,
+        ...cleanedAIMetadata,
         // Apply defaults where empty
-        artist: cleanedMetadata.artist || DEFAULT_METADATA.artist,
-        albumArtist: cleanedMetadata.albumArtist || DEFAULT_METADATA.albumArtist,
-        publisher: cleanedMetadata.publisher || DEFAULT_METADATA.publisher,
-        copyright: cleanedMetadata.copyright || DEFAULT_METADATA.copyright,
+        artist: cleanedAIMetadata.artist || DEFAULT_METADATA.artist,
+        albumArtist: cleanedAIMetadata.albumArtist || DEFAULT_METADATA.albumArtist,
+        publisher: cleanedAIMetadata.publisher || DEFAULT_METADATA.publisher,
+        copyright: cleanedAIMetadata.copyright || DEFAULT_METADATA.copyright,
       };
 
       updateFile({
@@ -132,6 +127,7 @@ export function useMP3Files() {
         metadata: finalMetadata,
         originalMetadata: { ...parsedMetadata },
         removedFrames: allRemovedFrames,
+        waveform: waveform // Add waveform to state
       });
 
       toast({
@@ -181,14 +177,22 @@ export function useMP3Files() {
 
   const processAllFiles = useCallback(async () => {
     const readyFiles = files.filter(f => f.status === 'ready');
-    const newReports: ProcessingReport[] = [];
+    if (readyFiles.length === 0) return [];
 
-    for (const file of readyFiles) {
-      setFiles(prev => prev.map(f =>
-        f.id === file.id ? { ...f, status: 'processing', progress: 50 } : f
-      ));
+    // Set all to processing (initial visual state)
+    setFiles(prev => prev.map(f =>
+      readyFiles.find(rf => rf.id === f.id)
+        ? { ...f, status: 'processing', progress: 0 }
+        : f
+    ));
 
-      // Generate report
+    // Parallel processing with simulated delay
+    const results = await Promise.all(readyFiles.map(async (file) => {
+      // Artificial scanning delay (4-10s)
+      const delay = 4000 + Math.random() * 6000;
+      await new Promise(r => setTimeout(r, delay));
+
+      // Report Generation Logic
       const changes = [];
       const original = file.originalMetadata;
       const current = file.metadata;
@@ -213,21 +217,22 @@ export function useMP3Files() {
         timestamp: new Date(),
       };
 
-      newReports.push(report);
-
+      // Mark as done
       setFiles(prev => prev.map(f =>
         f.id === file.id ? { ...f, status: 'done', progress: 100 } : f
       ));
-    }
 
-    setReports(prev => [...prev, ...newReports]);
+      return report;
+    }));
+
+    setReports(prev => [...prev, ...results]);
 
     toast({
       title: 'Processing complete',
-      description: `${readyFiles.length} file(s) processed successfully`,
+      description: `${results.length} file(s) processed successfully`,
     });
 
-    return newReports;
+    return results;
   }, [files, toast]);
 
   return {

@@ -9,6 +9,7 @@ export async function analyzeAudioFile(
   bpm: number;
   key: string;
   camelot: string;
+  waveform: number[];
 }> {
   return new Promise((resolve, reject) => {
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -37,10 +38,11 @@ export async function analyzeAudioFile(
           }
 
           if (type === 'result') {
+            const { bpm, key, camelot, peaks } = event.data;
             worker.terminate();
             audioContext.close();
             if (onProgress) onProgress(100);
-            resolve({ bpm, key, camelot });
+            resolve({ bpm, key, camelot, waveform: peaks });
             return;
           }
 
