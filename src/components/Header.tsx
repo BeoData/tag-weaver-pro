@@ -48,8 +48,8 @@ export function Header({ filesCount, readyCount, doneCount, onLoginClick, onPric
             </div>
           </div>
 
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-4 text-sm">
+          <div className="flex items-center gap-3 md:gap-6">
+            <div className="hidden md:flex items-center gap-4 text-sm">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-muted-foreground" />
                 <span className="text-muted-foreground">{filesCount} files</span>
@@ -64,7 +64,7 @@ export function Header({ filesCount, readyCount, doneCount, onLoginClick, onPric
               </div>
             </div>
 
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="hidden lg:flex items-center gap-2 text-xs text-muted-foreground">
               <Zap className="w-4 h-4 text-accent" />
               <span>Auto BPM/Key</span>
               <Shield className="w-4 h-4 text-success ml-2" />

@@ -127,7 +127,7 @@ const Index = () => {
             </div>
             <FileDropZone onFilesSelected={handleAddFiles} />
 
-            <div className="mt-12 grid grid-cols-3 gap-6 text-center">
+            <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
               <div className="p-4">
                 <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-3">
                   <Sparkles className="w-6 h-6 text-primary" />
@@ -158,13 +158,24 @@ const Index = () => {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-12 gap-6">
-            {/* Left Sidebar - File List */}
-            <div className="col-span-3 space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Left Column - File Management & Selection Details */}
+            <div className="lg:col-span-3 space-y-4 order-2 lg:order-1">
               <FileDropZone
                 onFilesSelected={handleAddFiles}
                 disabled={isAnyAnalyzing || isProcessing}
               />
+
+              {selectedFile && (
+                <div className="lg:hidden">
+                  <CoverArtUpload
+                    coverArt={selectedFile.coverArt}
+                    onCoverArtChange={(coverArt) => updateCoverArt(selectedFile.id, coverArt)}
+                    disabled={selectedFile.status === 'analyzing' || selectedFile.status === 'processing'}
+                  />
+                </div>
+              )}
+
               <FileList
                 files={files}
                 selectedFileId={selectedFileId}
@@ -172,7 +183,8 @@ const Index = () => {
                 onRemoveFile={removeFile}
               />
 
-              <div className="flex flex-col gap-2">
+              {/* Desktop Only Actions */}
+              <div className="hidden lg:flex flex-col gap-2">
                 <Button
                   onClick={handleProcess}
                   disabled={readyCount === 0 || isProcessing}
@@ -213,8 +225,8 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Main Content - Metadata Editor */}
-            <div className="col-span-6 space-y-4">
+            {/* Middle Column - Metadata Editor (Primary focus on mobile) */}
+            <div className="lg:col-span-6 space-y-4 order-1 lg:order-2">
               {selectedFile ? (
                 <>
                   <div className="bg-card rounded-xl border border-border p-4">
@@ -232,16 +244,16 @@ const Index = () => {
                       {selectedFile.metadata.bpm && selectedFile.metadata.camelotKey && (
                         <div className="flex items-center gap-4">
                           <div className="text-right">
-                            <p className="text-2xl font-bold text-primary font-mono">
+                            <p className="text-xl sm:text-2xl font-bold text-primary font-mono">
                               {selectedFile.metadata.bpm}
                             </p>
-                            <p className="text-xs text-muted-foreground">BPM</p>
+                            <p className="text-[10px] sm:text-xs text-muted-foreground">BPM</p>
                           </div>
                           <div className="text-right">
-                            <p className="text-2xl font-bold text-accent font-mono">
+                            <p className="text-xl sm:text-2xl font-bold text-accent font-mono">
                               {selectedFile.metadata.camelotKey}
                             </p>
-                            <p className="text-xs text-muted-foreground">Key</p>
+                            <p className="text-[10px] sm:text-xs text-muted-foreground">Key</p>
                           </div>
                         </div>
                       )}
@@ -252,7 +264,7 @@ const Index = () => {
                         <div className="flex items-center justify-between mb-2">
                           <p className="text-xs font-medium text-muted-foreground">WAVEFORM ANALYSIS</p>
                           {(selectedFile.status === 'analyzing' || selectedFile.status === 'processing') && (
-                            <span className="text-xs text-primary animate-pulse">
+                            <span className="text-[10px] sm:text-xs text-primary animate-pulse">
                               {selectedFile.status === 'analyzing' ? `Generating... ${Math.round(selectedFile.progress)}%` : 'Deep Scan & Clean...'}
                             </span>
                           )}
@@ -283,14 +295,16 @@ const Index = () => {
               )}
             </div>
 
-            {/* Right Sidebar - Cover Art & Report */}
-            <div className="col-span-3 space-y-4">
+            {/* Right Column - Status, Reports & Desktop Assets */}
+            <div className="lg:col-span-3 space-y-4 order-3">
               {selectedFile && (
-                <CoverArtUpload
-                  coverArt={selectedFile.coverArt}
-                  onCoverArtChange={(coverArt) => updateCoverArt(selectedFile.id, coverArt)}
-                  disabled={selectedFile.status === 'analyzing' || selectedFile.status === 'processing'}
-                />
+                <div className="hidden lg:block">
+                  <CoverArtUpload
+                    coverArt={selectedFile.coverArt}
+                    onCoverArtChange={(coverArt) => updateCoverArt(selectedFile.id, coverArt)}
+                    disabled={selectedFile.status === 'analyzing' || selectedFile.status === 'processing'}
+                  />
+                </div>
               )}
 
               {currentReport && (
@@ -311,6 +325,47 @@ const Index = () => {
                   </p>
                 </div>
               )}
+
+              {/* Mobile Only Actions (at the bottom) */}
+              <div className="flex lg:hidden flex-col gap-2 pt-2">
+                <Button
+                  onClick={handleProcess}
+                  disabled={readyCount === 0 || isProcessing}
+                  className="w-full"
+                  size="lg"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  {isProcessing
+                    ? 'Processing...'
+                    : tierLimits.canBulkProcess
+                      ? `Process All (${readyCount})`
+                      : `Process (${readyCount})`
+                  }
+                </Button>
+
+                {tierLimits.canDownloadFiles ? (
+                  <Button
+                    onClick={handleDownloadAll}
+                    disabled={doneCount === 0}
+                    variant="outline"
+                    className="w-full"
+                    size="lg"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Download All ({doneCount})
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => setShowPricingModal(true)}
+                    variant="outline"
+                    className="w-full"
+                    size="lg"
+                  >
+                    <Lock className="w-4 h-4 mr-2" />
+                    Download (Upgrade)
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         )}
