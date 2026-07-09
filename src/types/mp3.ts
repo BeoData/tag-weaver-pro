@@ -11,6 +11,11 @@ export interface MP3File {
   coverArt?: CoverArt;
   waveform?: number[];
   error?: string;
+  aiDetectionResult?: {
+    isLikelyAI: boolean;
+    confidence: number;
+    detectedPatterns: string[];
+  };
 }
 
 export interface MP3Metadata {
