@@ -6,6 +6,7 @@ import { MetadataEditor } from '@/components/MetadataEditor';
 import { CoverArtUpload } from '@/components/CoverArtUpload';
 import { ProcessingReportView } from '@/components/ProcessingReport';
 import { WaveformVisualizer } from '@/components/WaveformVisualizer';
+import { AIDetectionDisplay } from '@/components/AIDetectionDisplay';
 import { Button } from '@/components/ui/button';
 import { Play, Download, FileAudio, Sparkles, Lock } from 'lucide-react';
 import { useState } from 'react';
@@ -76,7 +77,6 @@ const Index = () => {
       return;
     }
 
-    // Dynamic import to avoid SSR issues if any, though not strictly needed for client-side only app
     const { writeTags } = await import('@/lib/tag-writer');
 
     for (const mp3File of doneFiles) {
@@ -87,15 +87,13 @@ const Index = () => {
           mp3File.coverArt
         );
 
-        // Create download link
         const url = URL.createObjectURL(taggedBlob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = mp3File.name; // Uses original name, maybe we want to rename?
+        link.download = mp3File.name;
         document.body.appendChild(link);
         link.click();
 
-        // Cleanup
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
 
@@ -122,7 +120,7 @@ const Index = () => {
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold mb-2">Upload Your MP3 Files</h2>
               <p className="text-muted-foreground">
-                Drag and drop MP3 files to automatically analyze BPM, Key, and clean AI metadata
+                Drag and drop MP3 files to analyze BPM, detect AI metadata, and clean traces
               </p>
             </div>
             <FileDropZone onFilesSelected={handleAddFiles} />
@@ -150,16 +148,15 @@ const Index = () => {
                 <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center mx-auto mb-3">
                   <Play className="w-6 h-6 text-accent" />
                 </div>
-                <h3 className="font-medium mb-1">AI Cleaner</h3>
+                <h3 className="font-medium mb-1">AI Detector</h3>
                 <p className="text-sm text-muted-foreground">
-                  Remove AI & software traces automatically
+                  Detect & remove AI-generated audio traces
                 </p>
               </div>
             </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Left Column - File Management & Selection Details */}
             <div className="lg:col-span-3 space-y-4 order-2 lg:order-1">
               <FileDropZone
                 onFilesSelected={handleAddFiles}
@@ -183,7 +180,6 @@ const Index = () => {
                 onRemoveFile={removeFile}
               />
 
-              {/* Desktop Only Actions */}
               <div className="hidden lg:flex flex-col gap-2">
                 <Button
                   onClick={handleProcess}
@@ -225,10 +221,19 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Middle Column - Metadata Editor (Primary focus on mobile) */}
             <div className="lg:col-span-6 space-y-4 order-1 lg:order-2">
               {selectedFile ? (
                 <>
+                  {selectedFile.aiDetectionResult && (
+                    <div className="bg-card rounded-xl border border-border p-4">
+                      <AIDetectionDisplay
+                        isLikelyAI={selectedFile.aiDetectionResult.isLikelyAI}
+                        confidence={selectedFile.aiDetectionResult.confidence}
+                        detectedPatterns={selectedFile.aiDetectionResult.detectedPatterns}
+                      />
+                    </div>
+                  )}
+
                   <div className="bg-card rounded-xl border border-border p-4">
                     <div className="flex items-center justify-between">
                       <div>
@@ -295,7 +300,6 @@ const Index = () => {
               )}
             </div>
 
-            {/* Right Column - Status, Reports & Desktop Assets */}
             <div className="lg:col-span-3 space-y-4 order-3">
               {selectedFile && (
                 <div className="hidden lg:block">
@@ -318,15 +322,14 @@ const Index = () => {
                 <div className="bg-card rounded-xl border border-border p-4">
                   <h3 className="font-medium text-sm mb-3 flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-warning" />
-                    AI Traces Found
+                    Removed Traces
                   </h3>
                   <p className="text-xs text-muted-foreground">
-                    {selectedFile.removedFrames.length} AI/software frame(s) will be removed during processing.
+                    {selectedFile.removedFrames.length} frame(s) will be removed during processing.
                   </p>
                 </div>
               )}
 
-              {/* Mobile Only Actions (at the bottom) */}
               <div className="flex lg:hidden flex-col gap-2 pt-2">
                 <Button
                   onClick={handleProcess}
