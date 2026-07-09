@@ -9,7 +9,6 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/BeoData/tag-weaver-pro/blob/main/LICENSE"><img src="https://img.shields.io/github/license/BeoData/tag-weaver-pro" alt="License"></a>
   <a href="https://github.com/BeoData/tag-weaver-pro/stargazers"><img src="https://img.shields.io/github/stars/BeoData/tag-weaver-pro?style=social" alt="GitHub stars"></a>
   <a href="https://github.com/BeoData/tag-weaver-pro/network/members"><img src="https://img.shields.io/github/forks/BeoData/tag-weaver-pro?style=social" alt="GitHub forks"></a>
   <a href="https://github.com/BeoData/tag-weaver-pro/issues"><img src="https://img.shields.io/github/issues/BeoData/tag-weaver-pro" alt="GitHub issues"></a>
